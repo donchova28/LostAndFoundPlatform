@@ -1,5 +1,12 @@
+# Rider settings
 .idea/
 **/.idea/
+
+# Local SQLite database
 *.db
 *.db-shm
 *.db-wal
+
+# Build files
+bin/
+obj/
