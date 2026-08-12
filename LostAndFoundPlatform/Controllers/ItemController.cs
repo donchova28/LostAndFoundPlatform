@@ -7,16 +7,20 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using LostAndFoundPlatform.Data;
 using LostAndFoundPlatform.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace LostAndFoundPlatform.Controllers
 {
     public class ItemController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public ItemController(ApplicationDbContext context)
+
+        public ItemController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: Item
@@ -59,6 +63,9 @@ namespace LostAndFoundPlatform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Name,Description,CategoryId,ImageUrl")] Item item)
         {
+            item.ApplicationUserId = _userManager.GetUserId(User);
+            ModelState.Remove("ApplicationUserId");
+
             if (ModelState.IsValid)
             {
                 _context.Add(item);
@@ -82,6 +89,12 @@ namespace LostAndFoundPlatform.Controllers
             {
                 return NotFound();
             }
+            
+            if (item.ApplicationUserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
+            }
+            
             ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", item.CategoryId);
             return View(item);
         }
@@ -97,6 +110,20 @@ namespace LostAndFoundPlatform.Controllers
             {
                 return NotFound();
             }
+            
+            var existingItem = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
+            if (existingItem == null)
+            {
+                return NotFound();
+            }
+            
+            if (existingItem.ApplicationUserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
+            }
+            
+            item.ApplicationUserId = existingItem.ApplicationUserId; // da go zadrze originalnio so go napravil
+
 
             if (ModelState.IsValid)
             {
@@ -118,6 +145,7 @@ namespace LostAndFoundPlatform.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
+            
             ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", item.CategoryId);
             return View(item);
         }
@@ -137,6 +165,11 @@ namespace LostAndFoundPlatform.Controllers
             {
                 return NotFound();
             }
+            
+            if (item.ApplicationUserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
+            }
 
             return View(item);
         }
@@ -147,11 +180,17 @@ namespace LostAndFoundPlatform.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var item = await _context.Items.FindAsync(id);
-            if (item != null)
+            if (item == null)
             {
-                _context.Items.Remove(item);
+                return NotFound();
             }
-
+            
+            if (item.ApplicationUserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
+            }
+            
+            _context.Items.Remove(item);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }

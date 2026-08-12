@@ -7,10 +7,12 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using LostAndFoundPlatform.Data;
 using LostAndFoundPlatform.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 
 namespace LostAndFoundPlatform.Controllers
 {
+    [Authorize]
     public class ReportController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -56,7 +58,8 @@ namespace LostAndFoundPlatform.Controllers
         // GET: Report/Create
         public IActionResult Create()
         {
-            var availableItems = _context.Items.Where(i => i.Report == null).ToList();
+            var currentUserId = _userManager.GetUserId(User);
+            var availableItems = _context.Items.Where(i => i.Report == null && i.ApplicationUserId == currentUserId).ToList();
             ViewData["EventLocationId"] = new SelectList(_context.Locations, "Id", "Address");
             ViewData["ItemId"] = new SelectList(availableItems, "Id", "Name");
             ViewData["PickupLocationId"] = new SelectList(_context.Locations, "Id", "Address");
@@ -72,14 +75,15 @@ namespace LostAndFoundPlatform.Controllers
         {
             report.ApplicationUserId = _userManager.GetUserId(User);
             ModelState.Remove("ApplicationUserId");
-
+            
             if (ModelState.IsValid)
             {
                 _context.Add(report);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            var availableItems = _context.Items.Where(i => i.Report == null).ToList();
+            var currentUserId = _userManager.GetUserId(User);
+            var availableItems = _context.Items.Where(i => i.Report == null && i.ApplicationUserId == currentUserId).ToList();
             ViewData["EventLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.EventLocationId);
             ViewData["ItemId"] = new SelectList(availableItems, "Id", "Name", report.ItemId);
             ViewData["PickupLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.PickupLocationId);
@@ -99,6 +103,13 @@ namespace LostAndFoundPlatform.Controllers
             {
                 return NotFound();
             }
+            
+            // dodadeno za da ne moze sekoj da mene secij report
+            if (report.ApplicationUserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
+            }
+            
             ViewData["EventLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.EventLocationId);
             ViewData["ItemId"] = new SelectList(_context.Items, "Id", "Name", report.ItemId);
             ViewData["PickupLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.PickupLocationId);
@@ -146,6 +157,13 @@ namespace LostAndFoundPlatform.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
+            
+            // dodadeno za da ne moze sekoj da mene secij report
+            if (report.ApplicationUserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
+            }
+            
             ViewData["EventLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.EventLocationId);
             ViewData["ItemId"] = new SelectList(_context.Items, "Id", "Name", report.ItemId);
             ViewData["PickupLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.PickupLocationId);
@@ -170,6 +188,13 @@ namespace LostAndFoundPlatform.Controllers
             {
                 return NotFound();
             }
+            
+            // dodadeno za da ne moze sekoj da mene secij report
+            if (report.ApplicationUserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
+            }
+            
 
             return View(report);
         }
@@ -183,6 +208,12 @@ namespace LostAndFoundPlatform.Controllers
             if (report != null)
             {
                 _context.Reports.Remove(report);
+            }
+            
+            // dodadeno za da ne moze sekoj da mene secij report
+            if (report.ApplicationUserId != _userManager.GetUserId(User))
+            {
+                return Forbid();
             }
 
             await _context.SaveChangesAsync();

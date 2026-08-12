@@ -10,4 +10,7 @@ public class Item
     public string ImageUrl { get; set; }
     public Report? Report { get; set; }
     
+   public string ApplicationUserId { get; set; }
+   public ApplicationUser? ApplicationUser { get; set; }
+    
 }
