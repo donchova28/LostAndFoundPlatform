@@ -56,8 +56,9 @@ namespace LostAndFoundPlatform.Controllers
         // GET: Report/Create
         public IActionResult Create()
         {
+            var availableItems = _context.Items.Where(i => i.Report == null).ToList();
             ViewData["EventLocationId"] = new SelectList(_context.Locations, "Id", "Address");
-            ViewData["ItemId"] = new SelectList(_context.Items, "Id", "Name");
+            ViewData["ItemId"] = new SelectList(availableItems, "Id", "Name");
             ViewData["PickupLocationId"] = new SelectList(_context.Locations, "Id", "Address");
             return View();
         }
@@ -78,8 +79,9 @@ namespace LostAndFoundPlatform.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+            var availableItems = _context.Items.Where(i => i.Report == null).ToList();
             ViewData["EventLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.EventLocationId);
-            ViewData["ItemId"] = new SelectList(_context.Items, "Id", "Name", report.ItemId);
+            ViewData["ItemId"] = new SelectList(availableItems, "Id", "Name", report.ItemId);
             ViewData["PickupLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.PickupLocationId);
             return View(report);
         }
