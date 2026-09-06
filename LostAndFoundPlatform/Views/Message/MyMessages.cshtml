@@ -1,0 +1,67 @@
+@model IEnumerable<LostAndFoundPlatform.Models.Message>
+
+@{
+    ViewData["Title"] = "My Messages";
+    string currentUserId = ViewBag.CurrentUserId;
+}
+
+<h2>My Messages</h2>
+
+<hr />
+
+@if (!Model.Any())
+{
+    <p>You don't have any messages yet.</p>
+}
+else
+{
+    @foreach (var conversation in Model.GroupBy(m => m.ReportId))
+    {
+        var lastMessage = conversation
+            .OrderByDescending(m => m.SentAt)
+            .First();
+
+        var otherUser =
+            lastMessage.SenderId == currentUserId
+                ? lastMessage.Receiver
+                : lastMessage.Sender;
+
+        var otherUserName =
+            !string.IsNullOrWhiteSpace(otherUser?.FirstName)
+                ? $"{otherUser.FirstName} {otherUser.LastName}"
+                : otherUser?.UserName;
+
+        <div class="card mb-3">
+            <div class="card-body">
+
+                <h5 class="card-title">
+                    @lastMessage.Report?.Item?.Name
+                </h5>
+
+                <p>
+                    Conversation with:
+                    <strong>@otherUserName</strong>
+                </p>
+
+                <p>
+                    <strong>Last message:</strong>
+                    @lastMessage.Content
+                </p>
+
+                <small class="text-muted">
+                    @lastMessage.SentAt.ToString("dd.MM.yyyy HH:mm")
+                </small>
+
+                <br /><br />
+
+                <a asp-controller="Message"
+                   asp-action="Chat"
+                   asp-route-reportId="@lastMessage.ReportId"
+                   class="btn btn-primary">
+                    Open Chat
+                </a>
+
+            </div>
+        </div>
+    }
+}

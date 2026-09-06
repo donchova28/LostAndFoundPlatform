@@ -1,0 +1,115 @@
+@model IEnumerable<LostAndFoundPlatform.Models.Message>
+
+@{
+    ViewData["Title"] = "Chat";
+
+    var report = ViewBag.Report as LostAndFoundPlatform.Models.Report;
+    string currentUserId = ViewBag.CurrentUserId;
+
+    string receiverId;
+
+    if (currentUserId == report.ApplicationUserId)
+    {
+        var firstMessage = Model.FirstOrDefault();
+
+        if (firstMessage != null)
+        {
+            receiverId = firstMessage.SenderId == currentUserId
+                ? firstMessage.ReceiverId
+                : firstMessage.SenderId;
+        }
+        else
+        {
+            receiverId = "";
+        }
+    }
+    else
+    {
+        receiverId = report.ApplicationUserId;
+    }
+}
+
+<h2>Chat about @report.Item?.Name</h2>
+
+<hr />
+
+<div class="mb-4">
+
+    @if (!Model.Any())
+    {
+        <p>No messages yet. Start the conversation.</p>
+    }
+
+    @foreach (var message in Model)
+    {
+        var senderName =
+            !string.IsNullOrWhiteSpace(message.Sender?.FirstName)
+                ? $"{message.Sender.FirstName} {message.Sender.LastName}"
+                : message.Sender?.UserName;
+
+        if (message.SenderId == currentUserId)
+        {
+            <div class="text-end mb-3">
+                <strong>You (@senderName)</strong>
+
+                <div>
+                    @message.Content
+                </div>
+
+                <small class="text-muted">
+                    @message.SentAt.ToString("dd.MM.yyyy HH:mm")
+                </small>
+            </div>
+        }
+        else
+        {
+            <div class="text-start mb-3">
+                <strong>@senderName</strong>
+
+                <div>
+                    @message.Content
+                </div>
+
+                <small class="text-muted">
+                    @message.SentAt.ToString("dd.MM.yyyy HH:mm")
+                </small>
+            </div>
+        }
+    }
+
+</div>
+
+@if (!string.IsNullOrEmpty(receiverId))
+{
+    <form asp-action="Send" method="post">
+
+        <input type="hidden"
+               name="reportId"
+               value="@report.Id" />
+
+        <input type="hidden"
+               name="receiverId"
+               value="@receiverId" />
+
+        <div class="mb-3">
+            <textarea name="content"
+                      class="form-control"
+                      placeholder="Write a message..."
+                      required></textarea>
+        </div>
+
+        <button type="submit"
+                class="btn btn-primary">
+            Send
+        </button>
+
+    </form>
+}
+
+<br />
+
+<a asp-controller="Report"
+   asp-action="Details"
+   asp-route-id="@report.Id">
+    Back to Report
+</a>

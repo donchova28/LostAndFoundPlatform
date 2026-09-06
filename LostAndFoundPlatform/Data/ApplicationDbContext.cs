@@ -1,4 +1,4 @@
-﻿using LostAndFoundPlatform.Models;
+using LostAndFoundPlatform.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,4 +10,30 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Category> Categories { get; set; }
     public DbSet<Location> Locations { get; set; }
     public DbSet<Report> Reports { get; set; }
+    public DbSet<Message> Messages { get; set; }
+    
+    // dodadeno OnModelCreating - mu kazuva na entity framework kako tocno se povrzani modelite megju sebe koga ja kreira bazata
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        builder.Entity<Message>()
+            .HasOne(m => m.Sender)
+            .WithMany()
+            .HasForeignKey(m => m.SenderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Message>()
+            .HasOne(m => m.Receiver)
+            .WithMany()
+            .HasForeignKey(m => m.ReceiverId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Message>()
+            .HasOne(m => m.Report)
+            .WithMany()
+            .HasForeignKey(m => m.ReportId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+    
 }
