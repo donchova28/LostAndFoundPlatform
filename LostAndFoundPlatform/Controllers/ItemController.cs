@@ -52,6 +52,7 @@ namespace LostAndFoundPlatform.Controllers
 
             var item = await _context.Items
                 .Include(i => i.Category)
+                .Include(i => i.Report)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (item == null)
             {

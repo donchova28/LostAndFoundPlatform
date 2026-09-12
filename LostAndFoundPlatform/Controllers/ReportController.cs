@@ -55,14 +55,66 @@ namespace LostAndFoundPlatform.Controllers
             return View(report);
         }
 
-        // GET: Report/Create
-        public IActionResult Create()
+// GET: Report/Create
+        public IActionResult Create(int? itemId)
         {
             var currentUserId = _userManager.GetUserId(User);
-            var availableItems = _context.Items.Where(i => i.Report == null && i.ApplicationUserId == currentUserId).ToList();
-            ViewData["EventLocationId"] = new SelectList(_context.Locations, "Id", "Address");
-            ViewData["ItemId"] = new SelectList(availableItems, "Id", "Name");
-            ViewData["PickupLocationId"] = new SelectList(_context.Locations, "Id", "Address");
+
+            var availableItems = _context.Items
+                .Where(i =>
+                    i.Report == null &&
+                    i.ApplicationUserId == currentUserId)
+                .ToList();
+
+            if (itemId.HasValue)
+            {
+                // Прво го бараме Item-от без филтри
+                var selectedItem = _context.Items
+                    .Include(i => i.Report)
+                    .FirstOrDefault(i => i.Id == itemId.Value);
+
+                if (selectedItem == null)
+                {
+                    return NotFound();
+                }
+
+                // Не може да креираш Report за туѓ Item
+                if (selectedItem.ApplicationUserId != currentUserId)
+                {
+                    return Forbid();
+                }
+
+                // Ако веќе има Report, оди директно на него
+                if (selectedItem.Report != null)
+                {
+                    return RedirectToAction(
+                        "Details",
+                        "Report",
+                        new { id = selectedItem.Report.Id });
+                }
+
+                ViewBag.LockItem = true;
+                ViewBag.LockedItemId = selectedItem.Id;
+                ViewBag.LockedItemName = selectedItem.Name;
+            }
+            else
+            {
+                ViewBag.LockItem = false;
+            }
+
+            ViewData["EventLocationId"] =
+                new SelectList(_context.Locations, "Id", "Address");
+
+            ViewData["ItemId"] =
+                new SelectList(
+                    availableItems,
+                    "Id",
+                    "Name",
+                    itemId);
+
+            ViewData["PickupLocationId"] =
+                new SelectList(_context.Locations, "Id", "Address");
+
             return View();
         }
 
@@ -71,22 +123,85 @@ namespace LostAndFoundPlatform.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Type,CreatedAt,ItemId,EventLocationId,PickupLocationId")] Report report)
+        public async Task<IActionResult> Create(
+            [Bind("Id,Type,CreatedAt,ItemId,EventLocationId,PickupLocationId")]
+            Report report,
+            bool lockItem = false)
         {
-            report.ApplicationUserId = _userManager.GetUserId(User);
+            var currentUserId = _userManager.GetUserId(User);
+
+            report.ApplicationUserId = currentUserId;
+
             ModelState.Remove("ApplicationUserId");
             
+            report.CreatedAt = DateTime.Now;
+            ModelState.Remove("CreatedAt");
+
+            // Проверка дека Item навистина му припаѓа
+            // на најавениот корисник
+            var validItem = await _context.Items
+                .AnyAsync(i =>
+                    i.Id == report.ItemId &&
+                    i.ApplicationUserId == currentUserId &&
+                    i.Report == null);
+
+            if (!validItem)
+            {
+                ModelState.AddModelError(
+                    "ItemId",
+                    "The selected item is not available.");
+            }
+
             if (ModelState.IsValid)
             {
                 _context.Add(report);
+
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
-            var currentUserId = _userManager.GetUserId(User);
-            var availableItems = _context.Items.Where(i => i.Report == null && i.ApplicationUserId == currentUserId).ToList();
-            ViewData["EventLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.EventLocationId);
-            ViewData["ItemId"] = new SelectList(availableItems, "Id", "Name", report.ItemId);
-            ViewData["PickupLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.PickupLocationId);
+
+            var availableItems = _context.Items
+                .Where(i =>
+                    i.Report == null &&
+                    i.ApplicationUserId == currentUserId)
+                .ToList();
+
+            ViewData["EventLocationId"] =
+                new SelectList(
+                    _context.Locations,
+                    "Id",
+                    "Address",
+                    report.EventLocationId);
+
+            ViewData["ItemId"] =
+                new SelectList(
+                    availableItems,
+                    "Id",
+                    "Name",
+                    report.ItemId);
+
+            ViewData["PickupLocationId"] =
+                new SelectList(
+                    _context.Locations,
+                    "Id",
+                    "Address",
+                    report.PickupLocationId);
+
+            ViewBag.LockItem = lockItem;
+
+            if (lockItem)
+            {
+                var selectedItem = availableItems
+                    .FirstOrDefault(i => i.Id == report.ItemId);
+
+                if (selectedItem != null)
+                {
+                    ViewBag.LockedItemId = selectedItem.Id;
+                    ViewBag.LockedItemName = selectedItem.Name;
+                }
+            }
+
             return View(report);
         }
 
@@ -167,6 +282,9 @@ namespace LostAndFoundPlatform.Controllers
             // Сопственикот останува ист
             report.ApplicationUserId = existingReport.ApplicationUserId;
             ModelState.Remove("ApplicationUserId");
+            
+            report.CreatedAt = existingReport.CreatedAt;
+            ModelState.Remove("CreatedAt");
 
             // Дозволени се само 0 = Lost и 1 = Found
             if (report.Type != 0 && report.Type != 1)

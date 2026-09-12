@@ -1,8 +1,164 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="home-hero">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+
+            <span class="hero-label">LOST & FOUND PLATFORM</span>
+
+            <h1 class="hero-title">
+                Lost something?<br />
+                Let’s help you find it.
+            </h1>
+
+            <p class="hero-text">
+                A simple place to report lost and found items,
+                browse existing reports and connect directly
+                with the person who may have your item.
+            </p>
+
+            <div class="d-flex flex-wrap gap-3 mt-4">
+
+                <a asp-controller="Report"
+                   asp-action="Index"
+                   class="btn btn-primary btn-lg">
+                    Browse Reports
+                </a>
+
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <a asp-controller="Item"
+                       asp-action="Create"
+                       class="btn btn-outline-primary btn-lg">
+                        Add an Item
+                    </a>
+                }
+                else
+                {
+                    <a asp-area="Identity"
+                       asp-page="/Account/Register"
+                       class="btn btn-outline-primary btn-lg">
+                        Get Started
+                    </a>
+                }
+
+            </div>
+        </div>
+
+        <div class="col-lg-5 mt-5 mt-lg-0">
+
+            <div class="hero-card">
+
+                <div class="hero-card-icon">
+                    ?
+                </div>
+
+                <h3>Found an item?</h3>
+
+                <p>
+                    Create an item, publish a Found report and
+                    help return it to its owner.
+                </p>
+
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <a asp-controller="Item"
+                       asp-action="Create">
+                        Create item →
+                    </a>
+                }
+                else
+                {
+                    <a asp-area="Identity"
+                       asp-page="/Account/Login">
+                        Login to get started →
+                    </a>
+                }
+
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<section class="how-it-works">
+
+    <div class="text-center mb-5">
+        <span class="section-label">HOW IT WORKS</span>
+        <h2>Three simple steps</h2>
+        <p class="text-muted">
+            From reporting an item to connecting with the right person.
+        </p>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-4">
+            <div class="step-card">
+
+                <div class="step-number">1</div>
+
+                <h4>Create an item</h4>
+
+                <p>
+                    Add the basic information about the item,
+                    including its name, description and category.
+                </p>
+
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="step-card">
+
+                <div class="step-number">2</div>
+
+                <h4>Publish a report</h4>
+
+                <p>
+                    Mark the item as Lost or Found and add the
+                    relevant location information.
+                </p>
+
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="step-card">
+
+                <div class="step-number">3</div>
+
+                <h4>Connect</h4>
+
+                <p>
+                    Contact the owner through the built-in messaging
+                    system and arrange the return of the item.
+                </p>
+
+            </div>
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="home-bottom-cta">
+
+    <div>
+        <h2>Start searching today.</h2>
+        <p>
+            Browse the latest lost and found reports.
+        </p>
+    </div>
+
+    <a asp-controller="Report"
+       asp-action="Index"
+       class="btn btn-light">
+        View Reports
+    </a>
+
+</section>

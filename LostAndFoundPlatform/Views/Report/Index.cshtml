@@ -1,65 +1,163 @@
+@using System.Security.Claims
 @model IEnumerable<LostAndFoundPlatform.Models.Report>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Reports";
+
+    var currentUserId =
+        User.FindFirstValue(ClaimTypes.NameIdentifier);
 }
 
-<h1>Index</h1>
+<div class="page-header">
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Type)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CreatedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ApplicationUser)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Item)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.EventLocation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.PickupLocation)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @(item.Type == 0 ? "Lost" : "Found")
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedAt)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ApplicationUser.Email)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.EventLocation.Address)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.PickupLocation.Address)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+    <div>
+        <span class="section-label">REPORTS</span>
+
+        <h1>Lost & Found Reports</h1>
+
+        <p class="text-muted mb-0">
+            Browse reported lost and found items.
+        </p>
+    </div>
+
+    @if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        <a asp-action="Create"
+           class="btn btn-primary">
+            + Create Report
+        </a>
+    }
+
+</div>
+
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+
+        <div class="empty-state-icon">
+            ?
+        </div>
+
+        <h3>No reports yet</h3>
+
+        <p>
+            There are currently no lost or found reports.
+        </p>
+
+    </div>
 }
-    </tbody>
-</table>
+else
+{
+    <div class="row g-4">
+
+        @foreach (var report in Model)
+        {
+            <div class="col-md-6 col-lg-4">
+
+                <div class="report-card">
+
+                    <div class="report-card-image">
+
+                        @if (!string.IsNullOrWhiteSpace(report.Item?.ImageUrl))
+                        {
+                            <img src="@report.Item.ImageUrl"
+                                 alt="@report.Item.Name"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+
+                            <div class="report-image-placeholder"
+                                 style="display:none;">
+                                No image
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="report-image-placeholder">
+                                No image
+                            </div>
+                        }
+
+
+                        @if (report.Type == 0)
+                        {
+                            <span class="report-badge lost">
+                                LOST
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="report-badge found">
+                                FOUND
+                            </span>
+                        }
+
+                    </div>
+
+
+                    <div class="report-card-body">
+
+                        <h3>
+                            @(report.Item?.Name ?? "Unknown item")
+                        </h3>
+
+
+                        <div class="report-info">
+
+                            <div>
+                                <span class="report-info-label">
+                                    Location
+                                </span>
+
+                                <span>
+                                    @(report.EventLocation?.Address ?? "-")
+                                </span>
+                            </div>
+
+
+                            <div>
+                                <span class="report-info-label">
+                                    Date
+                                </span>
+
+                                <span>
+                                    @report.CreatedAt.ToString("dd.MM.yyyy")
+                                </span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="report-card-actions">
+
+                            <a asp-action="Details"
+                               asp-route-id="@report.Id"
+                               class="btn btn-outline-primary btn-sm">
+                                View Details
+                            </a>
+
+                            @if (report.ApplicationUserId == currentUserId)
+                            {
+                                <a asp-action="Edit"
+                                   asp-route-id="@report.Id"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    Edit
+                                </a>
+
+                                <a asp-action="Delete"
+                                   asp-route-id="@report.Id"
+                                   class="btn btn-outline-danger btn-sm">
+                                    Delete
+                                </a>
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+}

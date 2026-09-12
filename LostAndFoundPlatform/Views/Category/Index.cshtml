@@ -1,10 +1,31 @@
 @model IEnumerable<LostAndFoundPlatform.Models.Category>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Categories";
 }
 
-<h1>Index</h1>
+<div class="page-header">
+
+    <div>
+        <span class="section-label">CATEGORIES</span>
+
+        <h1>Categories</h1>
+
+        <p class="text-muted mb-0">
+            Browse the categories used to organize lost and found items.
+        </p>
+    </div>
+
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-action="Create"
+           class="btn btn-primary">
+            + Add Category
+        </a>
+    }
+
+</div>
+
 
 @if (TempData["ErrorMessage"] != null)
 {
@@ -13,30 +34,87 @@
     </div>
 }
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+
+        <div class="empty-state-icon">
+            #
+        </div>
+
+        <h3>No categories yet</h3>
+
+        <p>
+            Categories will appear here once they are created.
+        </p>
+
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-action="Create"
+               class="btn btn-primary">
+                Add Category
+            </a>
+        }
+
+    </div>
 }
-    </tbody>
-</table>
+else
+{
+    <div class="row g-4">
+
+        @foreach (var category in Model)
+        {
+            <div class="col-sm-6 col-lg-4">
+
+                <div class="category-card">
+
+                    <div class="category-icon">
+                        #
+                    </div>
+
+                    <div class="category-card-content">
+
+                        <h3>
+                            @category.Name
+                        </h3>
+
+                        <p>
+                            Browse items in this category.
+                        </p>
+
+
+                        <div class="category-actions">
+
+                            <a asp-action="Details"
+                               asp-route-id="@category.Id"
+                               class="btn btn-outline-primary btn-sm">
+                                Details
+                            </a>
+
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-action="Edit"
+                                   asp-route-id="@category.Id"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    Edit
+                                </a>
+
+                                <a asp-action="Delete"
+                                   asp-route-id="@category.Id"
+                                   class="btn btn-outline-danger btn-sm">
+                                    Delete
+                                </a>
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+}

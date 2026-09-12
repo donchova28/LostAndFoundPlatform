@@ -1,42 +1,127 @@
 @model LostAndFoundPlatform.Models.Item
+@using System.Security.Claims
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Item Details";
+    var currentUserId =
+        User.FindFirstValue(ClaimTypes.NameIdentifier);
 }
 
-<h1>Details</h1>
+<div class="details-page">
 
-<div>
-    <h4>Item</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-        <dt class="col-sm-2">
-            Category
-        </dt>
-        <dd class="col-sm-10">
-            @Model.Category?.Name
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ImageUrl)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ImageUrl)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="Index"
+       class="back-link">
+        ← Back to Items
+    </a>
+
+    <div class="details-card">
+
+        <div class="row g-0">
+
+            <div class="col-lg-5">
+
+                <div class="details-image-wrapper">
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                    {
+                        <img src="@Model.ImageUrl"
+                             alt="@Model.Name"
+                             class="details-image"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+
+                        <div class="details-image-placeholder"
+                             style="display:none;">
+                            No image available
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="details-image-placeholder">
+                            No image available
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+
+            <div class="col-lg-7">
+
+                <div class="details-content">
+
+                    <span class="category-badge">
+                        @(Model.Category?.Name ?? "No category")
+                    </span>
+
+                    <h1>@Model.Name</h1>
+
+                    <div class="details-section">
+                        <span class="details-label">
+                            Description
+                        </span>
+
+                        <p>
+                            @Model.Description
+                        </p>
+                    </div>
+
+
+                    <div class="details-section">
+                        <span class="details-label">
+                            Category
+                        </span>
+
+                        <p>
+                            @(Model.Category?.Name ?? "-")
+                        </p>
+                    </div>
+
+
+                    <div class="details-actions">
+
+                        @if (Model.ApplicationUserId == currentUserId)
+                        {
+                            @if (Model.Report == null)
+                            {
+                                <a asp-controller="Report"
+                                   asp-action="Create"
+                                   asp-route-itemId="@Model.Id"
+                                   class="btn btn-primary">
+                                    Create Report
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-controller="Report"
+                                   asp-action="Details"
+                                   asp-route-id="@Model.Report.Id"
+                                   class="btn btn-primary">
+                                    View Report
+                                </a>
+                            }
+                        }
+
+                        <a asp-action="Edit"
+                           asp-route-id="@Model.Id"
+                           class="btn btn-outline-secondary">
+                            Edit
+                        </a>
+
+                        <a asp-action="Delete"
+                           asp-route-id="@Model.Id"
+                           class="btn btn-outline-danger">
+                            Delete
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </div>

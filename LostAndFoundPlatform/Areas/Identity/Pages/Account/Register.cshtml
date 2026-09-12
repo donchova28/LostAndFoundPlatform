@@ -1,0 +1,127 @@
+﻿@page
+@model RegisterModel
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="auth-page">
+
+    <div class="auth-card">
+
+        <div class="auth-header">
+
+            <span class="section-label">
+                CREATE ACCOUNT
+            </span>
+
+            <h1>Join Lost & Found</h1>
+
+            <p>
+                Create an account to add items, publish reports
+                and contact other users.
+            </p>
+
+        </div>
+
+
+        <form id="registerForm"
+              asp-route-returnUrl="@Model.ReturnUrl"
+              method="post">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="text-danger mb-3"
+                 role="alert">
+            </div>
+
+
+            <div class="mb-4">
+
+                <label asp-for="Input.Email"
+                       class="form-label">
+                    Email
+                </label>
+
+                <input asp-for="Input.Email"
+                       class="form-control"
+                       autocomplete="username"
+                       aria-required="true"
+                       placeholder="you@example.com" />
+
+                <span asp-validation-for="Input.Email"
+                      class="text-danger">
+                </span>
+
+            </div>
+
+
+            <div class="mb-4">
+
+                <label asp-for="Input.Password"
+                       class="form-label">
+                    Password
+                </label>
+
+                <input asp-for="Input.Password"
+                       class="form-control"
+                       autocomplete="new-password"
+                       aria-required="true"
+                       placeholder="Create a password" />
+
+                <span asp-validation-for="Input.Password"
+                      class="text-danger">
+                </span>
+
+            </div>
+
+
+            <div class="mb-4">
+
+                <label asp-for="Input.ConfirmPassword"
+                       class="form-label">
+                    Confirm Password
+                </label>
+
+                <input asp-for="Input.ConfirmPassword"
+                       class="form-control"
+                       autocomplete="new-password"
+                       aria-required="true"
+                       placeholder="Repeat your password" />
+
+                <span asp-validation-for="Input.ConfirmPassword"
+                      class="text-danger">
+                </span>
+
+            </div>
+
+
+            <button id="registerSubmit"
+                    type="submit"
+                    class="btn btn-primary auth-main-button">
+                Create Account
+            </button>
+
+
+            <div class="auth-footer">
+
+                <span>
+                    Already have an account?
+                </span>
+
+                <a asp-page="./Login"
+                   asp-route-returnUrl="@Model.ReturnUrl">
+                    Login
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

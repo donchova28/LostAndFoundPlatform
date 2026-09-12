@@ -3,92 +3,206 @@
 @{
     ViewData["Title"] = "Chat";
 
-    var report = ViewBag.Report as LostAndFoundPlatform.Models.Report;
-    string currentUserId = ViewBag.CurrentUserId;
-    string receiverId = ViewBag.OtherUserId;
-}
+    var report =
+        ViewBag.Report as LostAndFoundPlatform.Models.Report;
 
-<h2>Chat about @report.Item?.Name</h2>
+    string currentUserId =
+        ViewBag.CurrentUserId;
 
-<hr />
+    string receiverId =
+        ViewBag.OtherUserId;
 
-<div class="mb-4">
 
-    @if (!Model.Any())
+    var firstMessage = Model.FirstOrDefault();
+
+    LostAndFoundPlatform.Models.ApplicationUser? otherUser = null;
+
+    if (firstMessage != null)
     {
-        <p>No messages yet. Start the conversation.</p>
+        otherUser =
+            firstMessage.SenderId == currentUserId
+                ? firstMessage.Receiver
+                : firstMessage.Sender;
+    }
+    else if (report != null &&
+             currentUserId != report.ApplicationUserId)
+    {
+        otherUser = report.ApplicationUser;
     }
 
-    @foreach (var message in Model)
+
+    var otherUserName =
+        !string.IsNullOrWhiteSpace(otherUser?.FirstName)
+            ? $"{otherUser.FirstName} {otherUser.LastName}"
+            : otherUser?.UserName ?? "User";
+}
+
+
+<div class="chat-page">
+
+    <a asp-controller="Message"
+       asp-action="MyMessages"
+       class="back-link">
+        ← Back to Messages
+    </a>
+
+
+    <div class="chat-card">
+
+        <!-- CHAT HEADER -->
+
+        <div class="chat-header">
+
+            <div class="chat-user-info">
+
+                <div class="conversation-avatar">
+                    @otherUserName.Substring(0, 1).ToUpper()
+                </div>
+
+                <div>
+                    <h2>
+                        @otherUserName
+                    </h2>
+
+                    <span>
+                        Conversation about
+                        <strong>
+                            @(report?.Item?.Name ?? "Item")
+                        </strong>
+                    </span>
+                </div>
+
+            </div>
+
+
+            @if (report != null)
+            {
+                <div>
+
+                    @if (report.Type == 0)
+                    {
+                        <span class="message-report-badge lost">
+                            LOST
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="message-report-badge found">
+                            FOUND
+                        </span>
+                    }
+
+                </div>
+            }
+
+        </div>
+
+
+        <!-- MESSAGES -->
+
+        <div class="chat-messages">
+
+            @if (!Model.Any())
+            {
+                <div class="chat-empty">
+
+                    <p>
+                        No messages yet.
+                    </p>
+
+                    <span>
+                        Start the conversation below.
+                    </span>
+
+                </div>
+            }
+            else
+            {
+                @foreach (var message in Model)
+                {
+                    var isMine =
+                        message.SenderId == currentUserId;
+
+                    var senderName =
+                        !string.IsNullOrWhiteSpace(message.Sender?.FirstName)
+                            ? $"{message.Sender.FirstName} {message.Sender.LastName}"
+                            : message.Sender?.UserName ?? "User";
+
+
+                    <div class="chat-message-row @(isMine ? "mine" : "theirs")">
+
+                        <div class="chat-message">
+
+                            <span class="message-sender">
+                                @(isMine ? "You" : senderName)
+                            </span>
+
+                            <div class="message-bubble">
+                                @message.Content
+                            </div>
+
+                            <span class="message-time">
+                                @message.SentAt.ToString("dd.MM.yyyy HH:mm")
+                            </span>
+
+                        </div>
+
+                    </div>
+                }
+            }
+
+        </div>
+
+
+        <!-- SEND MESSAGE -->
+
+        <div class="chat-compose">
+
+            <form asp-action="Send"
+                  method="post">
+
+                <input type="hidden"
+                       name="reportId"
+                       value="@report?.Id" />
+
+                <input type="hidden"
+                       name="receiverId"
+                       value="@receiverId" />
+
+
+                <div class="chat-input-row">
+
+                    <textarea name="content"
+                              class="form-control"
+                              rows="2"
+                              placeholder="Write a message..."
+                              required></textarea>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Send
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    @if (report != null)
     {
-        var senderName =
-            !string.IsNullOrWhiteSpace(message.Sender?.FirstName)
-                ? $"{message.Sender.FirstName} {message.Sender.LastName}"
-                : message.Sender?.UserName;
+        <div class="chat-report-link">
 
-        if (message.SenderId == currentUserId)
-        {
-            <div class="text-end mb-3">
-                <strong>You (@senderName)</strong>
+            <a asp-controller="Report"
+               asp-action="Details"
+               asp-route-id="@report.Id">
+                View Report →
+            </a>
 
-                <div>
-                    @message.Content
-                </div>
-
-                <small class="text-muted">
-                    @message.SentAt.ToString("dd.MM.yyyy HH:mm")
-                </small>
-            </div>
-        }
-        else
-        {
-            <div class="text-start mb-3">
-                <strong>@senderName</strong>
-
-                <div>
-                    @message.Content
-                </div>
-
-                <small class="text-muted">
-                    @message.SentAt.ToString("dd.MM.yyyy HH:mm")
-                </small>
-            </div>
-        }
+        </div>
     }
 
 </div>
-
-@if (!string.IsNullOrEmpty(receiverId))
-{
-    <form asp-action="Send" method="post">
-
-        <input type="hidden"
-               name="reportId"
-               value="@report.Id" />
-
-        <input type="hidden"
-               name="receiverId"
-               value="@receiverId" />
-
-        <div class="mb-3">
-            <textarea name="content"
-                      class="form-control"
-                      placeholder="Write a message..."
-                      required></textarea>
-        </div>
-
-        <button type="submit"
-                class="btn btn-primary">
-            Send
-        </button>
-
-    </form>
-}
-
-<br />
-
-<a asp-controller="Report"
-   asp-action="Details"
-   asp-route-id="@report.Id">
-    Back to Report
-</a>

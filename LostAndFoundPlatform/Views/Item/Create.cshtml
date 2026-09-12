@@ -1,44 +1,126 @@
 @model LostAndFoundPlatform.Models.Item
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Add Item";
 }
 
-<h1>Create</h1>
+<div class="form-page">
 
-<h4>Item</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
-                <input asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label class="control-label">Category</label>
-                <select asp-for="CategoryId" class ="form-control" asp-items="ViewBag.CategoryId"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="ImageUrl" class="control-label"></label>
-                <input asp-for="ImageUrl" class="form-control" />
-                <span asp-validation-for="ImageUrl" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+    <div class="form-header">
+        <span class="section-label">NEW ITEM</span>
+
+        <h1>Add an Item</h1>
+
+        <p>
+            Add basic information about the item before
+            creating a Lost or Found report.
+        </p>
     </div>
+
+
+    <div class="form-card">
+
+        <form asp-action="Create">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="text-danger mb-3">
+            </div>
+
+
+            <div class="mb-4">
+                <label asp-for="Name"
+                       class="form-label">
+                    Item Name
+                </label>
+
+                <input asp-for="Name"
+                       class="form-control"
+                       placeholder="e.g. Black iPhone 15" />
+
+                <span asp-validation-for="Name"
+                      class="text-danger">
+                </span>
+            </div>
+
+
+            <div class="mb-4">
+                <label asp-for="Description"
+                       class="form-label">
+                    Description
+                </label>
+
+                <textarea asp-for="Description"
+                          class="form-control"
+                          rows="4"
+                          placeholder="Describe the item..."></textarea>
+
+                <span asp-validation-for="Description"
+                      class="text-danger">
+                </span>
+            </div>
+
+
+            <div class="mb-4">
+                <label class="form-label">
+                    Category
+                </label>
+
+                <select asp-for="CategoryId"
+                        class="form-select"
+                        asp-items="ViewBag.CategoryId">
+                    <option value="">
+                        Select a category
+                    </option>
+                </select>
+
+                <span asp-validation-for="CategoryId"
+                      class="text-danger">
+                </span>
+            </div>
+
+
+            <div class="mb-4">
+                <label asp-for="ImageUrl"
+                       class="form-label">
+                    Image URL
+                </label>
+
+                <input asp-for="ImageUrl"
+                       class="form-control"
+                       placeholder="https://example.com/image.jpg" />
+
+                <span class="form-help">
+                    Paste a direct URL to an image of the item.
+                </span>
+
+                <span asp-validation-for="ImageUrl"
+                      class="text-danger">
+                </span>
+            </div>
+
+
+            <div class="form-actions">
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    Add Item
+                </button>
+
+                <a asp-action="Index"
+                   class="btn btn-outline-secondary">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

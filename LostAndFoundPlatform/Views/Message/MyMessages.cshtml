@@ -2,80 +2,152 @@
 
 @{
     ViewData["Title"] = "My Messages";
+
     string currentUserId = ViewBag.CurrentUserId;
 }
 
-<h2>My Messages</h2>
+<div class="page-header">
 
-<hr />
+    <div>
+        <span class="section-label">MESSAGES</span>
+
+        <h1>My Messages</h1>
+
+        <p class="text-muted mb-0">
+            Conversations about your lost and found items.
+        </p>
+    </div>
+
+</div>
+
 
 @if (!Model.Any())
 {
-    <p>You don't have any messages yet.</p>
+    <div class="empty-state">
+
+        <div class="empty-state-icon">
+            💬
+        </div>
+
+        <h3>No messages yet</h3>
+
+        <p>
+            When you contact someone about an item,
+            your conversations will appear here.
+        </p>
+
+        <a asp-controller="Report"
+           asp-action="Index"
+           class="btn btn-primary">
+            Browse Reports
+        </a>
+
+    </div>
 }
 else
 {
-    @foreach (var conversation in Model.GroupBy(m => new
-              {
-                  ReportId = m.ReportId,
+    <div class="conversations-list">
 
-                  OtherUserId = m.SenderId == currentUserId
-                      ? m.ReceiverId
-                      : m.SenderId
-              }))
-    {
-        var lastMessage = conversation
-            .OrderByDescending(m => m.SentAt)
-            .ThenByDescending(m => m.Id)
-            .First();
+        @foreach (var conversation in Model
+            .GroupBy(m => new
+            {
+                ReportId = m.ReportId,
 
-        var otherUser =
-            lastMessage.SenderId == currentUserId
-                ? lastMessage.Receiver
-                : lastMessage.Sender;
+                OtherUserId = m.SenderId == currentUserId
+                    ? m.ReceiverId
+                    : m.SenderId
+            })
+            .OrderByDescending(g => g.Max(m => m.SentAt)))
+        {
+            var lastMessage = conversation
+                .OrderByDescending(m => m.SentAt)
+                .ThenByDescending(m => m.Id)
+                .First();
 
-        var otherUserName =
-            !string.IsNullOrWhiteSpace(otherUser?.FirstName)
-                ? $"{otherUser.FirstName} {otherUser.LastName}"
-                : otherUser?.UserName;
-        
-        var lastMessageSender =
-            lastMessage.SenderId == currentUserId
-                ? "You"
-                : otherUserName;
+            var otherUser =
+                lastMessage.SenderId == currentUserId
+                    ? lastMessage.Receiver
+                    : lastMessage.Sender;
 
-        <div class="card mb-3">
-            <div class="card-body">
+            var otherUserName =
+                !string.IsNullOrWhiteSpace(otherUser?.FirstName)
+                    ? $"{otherUser.FirstName} {otherUser.LastName}"
+                    : otherUser?.UserName ?? "User";
 
-                <h5 class="card-title">
-                    @lastMessage.Report?.Item?.Name
-                </h5>
+            var lastMessageSender =
+                lastMessage.SenderId == currentUserId
+                    ? "You"
+                    : otherUserName;
 
-                <p>
-                    Conversation with:
-                    <strong>@otherUserName</strong>
-                </p>
+            <div class="conversation-card">
 
-                <p>
-                    <strong>Last message:</strong>
-                    @lastMessageSender: @lastMessage.Content
-                </p>
+                <div class="conversation-main">
 
-                <small class="text-muted">
-                    @lastMessage.SentAt.ToString("dd.MM.yyyy HH:mm")
-                </small>
+                    <div class="conversation-avatar">
+                        @otherUserName.Substring(0, 1).ToUpper()
+                    </div>
 
-                <br /><br />
+                    <div class="conversation-content">
+
+                        <div class="conversation-top">
+
+                            <div>
+                                <h3>
+                                    @otherUserName
+                                </h3>
+
+                                <span class="conversation-item">
+                                    About:
+                                    <strong>
+                                        @(lastMessage.Report?.Item?.Name ?? "Item")
+                                    </strong>
+                                </span>
+                            </div>
+
+                            <span class="conversation-time">
+                                @lastMessage.SentAt.ToString("dd.MM.yyyy HH:mm")
+                            </span>
+
+                        </div>
+
+
+                        <div class="conversation-bottom">
+
+                            <p>
+                                <strong>@lastMessageSender:</strong>
+                                @lastMessage.Content
+                            </p>
+
+                            @if (lastMessage.Report?.Type == 0)
+                            {
+                                <span class="message-report-badge lost">
+                                    LOST
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="message-report-badge found">
+                                    FOUND
+                                </span>
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+
 
                 <a asp-controller="Message"
                    asp-action="Chat"
                    asp-route-reportId="@lastMessage.ReportId"
                    asp-route-otherUserId="@conversation.Key.OtherUserId"
-                   class="btn btn-primary">
+                   class="btn btn-outline-primary">
                     Open Chat
                 </a>
 
             </div>
-        </div>
-    }
+        }
+
+    </div>
 }

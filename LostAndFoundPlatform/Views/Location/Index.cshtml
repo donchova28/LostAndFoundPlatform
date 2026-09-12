@@ -1,11 +1,35 @@
-@model IEnumerable<LostAndFoundPlatform.Models.Location>
 @using System.Security.Claims
+@model IEnumerable<LostAndFoundPlatform.Models.Location>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Locations";
+
+    var currentUserId =
+        User.FindFirstValue(ClaimTypes.NameIdentifier);
 }
 
-<h1>Index</h1>
+<div class="page-header">
+
+    <div>
+        <span class="section-label">LOCATIONS</span>
+
+        <h1>Locations</h1>
+
+        <p class="text-muted mb-0">
+            Locations used for lost, found and pickup information.
+        </p>
+    </div>
+
+    @if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        <a asp-action="Create"
+           class="btn btn-primary">
+            + Add Location
+        </a>
+    }
+
+</div>
+
 
 @if (TempData["ErrorMessage"] != null)
 {
@@ -14,47 +38,85 @@
     </div>
 }
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Address)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.City)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Address)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.City)
-            </td>
-            <td>
-                @if (item.ApplicationUserId ==
-                     User.FindFirstValue(ClaimTypes.NameIdentifier))
-                {
-                    <a asp-action="Edit"
-                       asp-route-id="@item.Id">Edit</a>
 
-                    <span> | </span>
+@if (!Model.Any())
+{
+    <div class="empty-state">
 
-                    <a asp-action="Delete"
-                       asp-route-id="@item.Id">Delete </a>
-                <span> | </span>
-                }
-                
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> 
-            </td>
-        </tr>
+        <div class="empty-state-icon">
+            📍
+        </div>
+
+        <h3>No locations yet</h3>
+
+        <p>
+            Add a location to use it when creating a report.
+        </p>
+
+        <a asp-action="Create"
+           class="btn btn-primary">
+            Add Location
+        </a>
+
+    </div>
 }
-    </tbody>
-</table>
+else
+{
+    <div class="row g-4">
+
+        @foreach (var location in Model)
+        {
+            <div class="col-md-6 col-lg-4">
+
+                <div class="location-card">
+
+                    <div class="location-icon">
+                        📍
+                    </div>
+
+                    <div class="location-card-content">
+
+                        <h3>
+                            @location.Address
+                        </h3>
+
+                        <p>
+                            @location.City
+                        </p>
+
+
+                        <div class="location-actions">
+
+                            <a asp-action="Details"
+                               asp-route-id="@location.Id"
+                               class="btn btn-outline-primary btn-sm">
+                                Details
+                            </a>
+
+
+                            @if (location.ApplicationUserId == currentUserId)
+                            {
+                                <a asp-action="Edit"
+                                   asp-route-id="@location.Id"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    Edit
+                                </a>
+
+                                <a asp-action="Delete"
+                                   asp-route-id="@location.Id"
+                                   class="btn btn-outline-danger btn-sm">
+                                    Delete
+                                </a>
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+}
