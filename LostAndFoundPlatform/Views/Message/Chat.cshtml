@@ -5,28 +5,7 @@
 
     var report = ViewBag.Report as LostAndFoundPlatform.Models.Report;
     string currentUserId = ViewBag.CurrentUserId;
-
-    string receiverId;
-
-    if (currentUserId == report.ApplicationUserId)
-    {
-        var firstMessage = Model.FirstOrDefault();
-
-        if (firstMessage != null)
-        {
-            receiverId = firstMessage.SenderId == currentUserId
-                ? firstMessage.ReceiverId
-                : firstMessage.SenderId;
-        }
-        else
-        {
-            receiverId = "";
-        }
-    }
-    else
-    {
-        receiverId = report.ApplicationUserId;
-    }
+    string receiverId = ViewBag.OtherUserId;
 }
 
 <h2>Chat about @report.Item?.Name</h2>

@@ -34,6 +34,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .WithMany()
             .HasForeignKey(m => m.ReportId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Entity<Item>()
+            .HasOne(i => i.Category)
+            .WithMany(c => c.Items)
+            .HasForeignKey(i => i.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
+    
+    
     
 }

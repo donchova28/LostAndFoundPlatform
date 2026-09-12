@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using LostAndFoundPlatform.Data;
 using LostAndFoundPlatform.Models;
+using System.Security.Claims;
 
 namespace LostAndFoundPlatform.Controllers
 {
@@ -58,6 +59,7 @@ namespace LostAndFoundPlatform.Controllers
         {
             if (ModelState.IsValid)
             {
+                location.ApplicationUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 _context.Add(location);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -68,15 +70,23 @@ namespace LostAndFoundPlatform.Controllers
         // GET: Location/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            
             if (id == null)
             {
                 return NotFound();
             }
 
             var location = await _context.Locations.FindAsync(id);
+            
             if (location == null)
             {
                 return NotFound();
+            }
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (location.ApplicationUserId != currentUserId)
+            {
+                return Forbid();
             }
             return View(location);
         }
@@ -124,11 +134,17 @@ namespace LostAndFoundPlatform.Controllers
                 return NotFound();
             }
 
-            var location = await _context.Locations
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var location = await _context.Locations.FirstOrDefaultAsync(m => m.Id == id);
             if (location == null)
             {
                 return NotFound();
+            }
+            
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (location.ApplicationUserId != currentUserId)
+            {
+                return Forbid();
             }
 
             return View(location);
@@ -139,13 +155,38 @@ namespace LostAndFoundPlatform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            var currentUserId =
+                User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+
             var location = await _context.Locations.FindAsync(id);
-            if (location != null)
+
+            if (location == null)
             {
-                _context.Locations.Remove(location);
+                return NotFound();
             }
 
+            // Само сопственикот може да ја избрише локацијата
+            if (location.ApplicationUserId != currentUserId)
+            {
+                return Forbid();
+            }
+
+            // Проверка дали локацијата се користи во некој Report
+            var isUsed = await _context.Reports.AnyAsync(r =>
+                r.EventLocationId == id ||
+                r.PickupLocationId == id);
+
+            if (isUsed)
+            {
+                TempData["ErrorMessage"] =
+                    "This location cannot be deleted because it is used in a report.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            _context.Locations.Remove(location);
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
 

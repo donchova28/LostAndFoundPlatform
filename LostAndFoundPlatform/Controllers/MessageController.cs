@@ -178,9 +178,10 @@ namespace LostAndFoundPlatform.Controllers
         // dodadeni novi funkcionalnosti za chat i send
         
         [Authorize]
-        public async Task<IActionResult> Chat(int reportId)
+        public async Task<IActionResult> Chat(int reportId, string? otherUserId)
         {
-            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var currentUserId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var report = await _context.Reports
                 .Include(r => r.ApplicationUser)
@@ -192,17 +193,37 @@ namespace LostAndFoundPlatform.Controllers
                 return NotFound();
             }
 
+            // Ако не е owner, другиот корисник автоматски е owner-от
+            if (currentUserId != report.ApplicationUserId)
+            {
+                otherUserId = report.ApplicationUserId;
+            }
+
+            // Ако owner го отвора chat-от,
+            // мора да знаеме со кој корисник разговара
+            if (string.IsNullOrEmpty(otherUserId))
+            {
+                return BadRequest();
+            }
+
             var messages = await _context.Messages
                 .Include(m => m.Sender)
+                .Include(m => m.Receiver)
                 .Where(m =>
                     m.ReportId == reportId &&
-                    (m.SenderId == currentUserId ||
-                     m.ReceiverId == currentUserId))
+                    (
+                        (m.SenderId == currentUserId &&
+                         m.ReceiverId == otherUserId)
+                        ||
+                        (m.SenderId == otherUserId &&
+                         m.ReceiverId == currentUserId)
+                    ))
                 .OrderBy(m => m.SentAt)
                 .ToListAsync();
 
             ViewBag.Report = report;
             ViewBag.CurrentUserId = currentUserId;
+            ViewBag.OtherUserId = otherUserId;
 
             return View(messages);
         }
@@ -220,7 +241,11 @@ namespace LostAndFoundPlatform.Controllers
 
             if (string.IsNullOrWhiteSpace(content))
             {
-                return RedirectToAction("Chat", new { reportId });
+                return RedirectToAction("Chat", new
+                {
+                    reportId,
+                    otherUserId = receiverId
+                });
             }
 
             var message = new Message
@@ -235,7 +260,11 @@ namespace LostAndFoundPlatform.Controllers
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction("Chat", new { reportId });
+            return RedirectToAction("Chat", new
+            {
+                reportId,
+                otherUserId = receiverId
+            });
         }
         
         

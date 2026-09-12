@@ -99,20 +99,37 @@ namespace LostAndFoundPlatform.Controllers
             }
 
             var report = await _context.Reports.FindAsync(id);
+
             if (report == null)
             {
                 return NotFound();
             }
-            
-            // dodadeno za da ne moze sekoj da mene secij report
-            if (report.ApplicationUserId != _userManager.GetUserId(User))
+
+            var currentUserId = _userManager.GetUserId(User);
+
+            // Само сопственикот може да го менува Report-от
+            if (report.ApplicationUserId != currentUserId)
             {
                 return Forbid();
             }
-            
-            ViewData["EventLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.EventLocationId);
-            ViewData["ItemId"] = new SelectList(_context.Items, "Id", "Name", report.ItemId);
-            ViewData["PickupLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.PickupLocationId);
+
+            // Само Items на моменталниот корисник
+            // + тековниот Item мора да остане достапен
+            var availableItems = _context.Items
+                .Where(i =>
+                    i.ApplicationUserId == currentUserId &&
+                    (i.Report == null || i.Id == report.ItemId))
+                .ToList();
+
+            ViewData["EventLocationId"] =
+                new SelectList(_context.Locations, "Id", "Address", report.EventLocationId);
+
+            ViewData["ItemId"] =
+                new SelectList(availableItems, "Id", "Name", report.ItemId);
+
+            ViewData["PickupLocationId"] =
+                new SelectList(_context.Locations, "Id", "Address", report.PickupLocationId);
+
             return View(report);
         }
 
@@ -121,21 +138,41 @@ namespace LostAndFoundPlatform.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Type,CreatedAt,ItemId,EventLocationId,PickupLocationId")] Report report)
+        public async Task<IActionResult> Edit(
+            int id,
+            [Bind("Id,Type,CreatedAt,ItemId,EventLocationId,PickupLocationId")] Report report)
         {
             if (id != report.Id)
             {
                 return NotFound();
             }
-            
-            // dodadeno nad proveruvanje modelstate valid !!!!!!!!
-            
-            var existingReport = await _context.Reports.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id);
+
+            var existingReport = await _context.Reports
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == id);
+
             if (existingReport == null)
             {
                 return NotFound();
             }
+
+            var currentUserId = _userManager.GetUserId(User);
+
+            // ОВА МОРА ДА БИДЕ ПРЕД SaveChanges
+            if (existingReport.ApplicationUserId != currentUserId)
+            {
+                return Forbid();
+            }
+
+            // Сопственикот останува ист
             report.ApplicationUserId = existingReport.ApplicationUserId;
+            ModelState.Remove("ApplicationUserId");
+
+            // Дозволени се само 0 = Lost и 1 = Found
+            if (report.Type != 0 && report.Type != 1)
+            {
+                ModelState.AddModelError("Type", "Please select Lost or Found.");
+            }
 
             if (ModelState.IsValid)
             {
@@ -150,23 +187,28 @@ namespace LostAndFoundPlatform.Controllers
                     {
                         return NotFound();
                     }
-                    else
-                    {
-                        throw;
-                    }
+
+                    throw;
                 }
+
                 return RedirectToAction(nameof(Index));
             }
-            
-            // dodadeno za da ne moze sekoj da mene secij report
-            if (report.ApplicationUserId != _userManager.GetUserId(User))
-            {
-                return Forbid();
-            }
-            
-            ViewData["EventLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.EventLocationId);
-            ViewData["ItemId"] = new SelectList(_context.Items, "Id", "Name", report.ItemId);
-            ViewData["PickupLocationId"] = new SelectList(_context.Locations, "Id", "Address", report.PickupLocationId);
+
+            var availableItems = _context.Items
+                .Where(i =>
+                    i.ApplicationUserId == currentUserId &&
+                    (i.Report == null || i.Id == report.ItemId))
+                .ToList();
+
+            ViewData["EventLocationId"] =
+                new SelectList(_context.Locations, "Id", "Address", report.EventLocationId);
+
+            ViewData["ItemId"] =
+                new SelectList(availableItems, "Id", "Name", report.ItemId);
+
+            ViewData["PickupLocationId"] =
+                new SelectList(_context.Locations, "Id", "Address", report.PickupLocationId);
+
             return View(report);
         }
 
@@ -205,18 +247,20 @@ namespace LostAndFoundPlatform.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var report = await _context.Reports.FindAsync(id);
-            if (report != null)
+
+            if (report == null)
             {
-                _context.Reports.Remove(report);
+                return NotFound();
             }
-            
-            // dodadeno za da ne moze sekoj da mene secij report
+
             if (report.ApplicationUserId != _userManager.GetUserId(User))
             {
                 return Forbid();
             }
 
+            _context.Reports.Remove(report);
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
 

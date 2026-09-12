@@ -9,6 +9,29 @@
 <p>
     <a asp-action="Create">Create New</a>
 </p>
+
+<form asp-action="Index" method="get" class="mb-3">
+    <label>Show:</label>
+
+    <select name="mineOnly"
+            class="form-select"
+            style="width: 200px;"
+            onchange="this.form.submit()">
+
+        @if (ViewBag.MineOnly == true)
+        {
+            <option value="false">All Items</option>
+            <option value="true" selected>My Items</option>
+        }
+        else
+        {
+            <option value="false" selected>All Items</option>
+            <option value="true">My Items</option>
+        }
+
+    </select>
+</form>
+
 <table class="table">
     <thead>
         <tr>
@@ -19,7 +42,7 @@
                 @Html.DisplayNameFor(model => model.Description)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Category)
+                Category
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.ImageUrl)
@@ -37,7 +60,7 @@
                 @Html.DisplayFor(modelItem => item.Description)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Category.Id)
+                @item.Category?.Name
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.ImageUrl)

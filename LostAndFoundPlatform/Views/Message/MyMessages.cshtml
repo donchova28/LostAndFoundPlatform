@@ -15,10 +15,18 @@
 }
 else
 {
-    @foreach (var conversation in Model.GroupBy(m => m.ReportId))
+    @foreach (var conversation in Model.GroupBy(m => new
+              {
+                  ReportId = m.ReportId,
+
+                  OtherUserId = m.SenderId == currentUserId
+                      ? m.ReceiverId
+                      : m.SenderId
+              }))
     {
         var lastMessage = conversation
             .OrderByDescending(m => m.SentAt)
+            .ThenByDescending(m => m.Id)
             .First();
 
         var otherUser =
@@ -30,6 +38,11 @@ else
             !string.IsNullOrWhiteSpace(otherUser?.FirstName)
                 ? $"{otherUser.FirstName} {otherUser.LastName}"
                 : otherUser?.UserName;
+        
+        var lastMessageSender =
+            lastMessage.SenderId == currentUserId
+                ? "You"
+                : otherUserName;
 
         <div class="card mb-3">
             <div class="card-body">
@@ -45,7 +58,7 @@ else
 
                 <p>
                     <strong>Last message:</strong>
-                    @lastMessage.Content
+                    @lastMessageSender: @lastMessage.Content
                 </p>
 
                 <small class="text-muted">
@@ -57,6 +70,7 @@ else
                 <a asp-controller="Message"
                    asp-action="Chat"
                    asp-route-reportId="@lastMessage.ReportId"
+                   asp-route-otherUserId="@conversation.Key.OtherUserId"
                    class="btn btn-primary">
                     Open Chat
                 </a>

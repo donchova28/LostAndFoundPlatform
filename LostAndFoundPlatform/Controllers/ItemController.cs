@@ -24,10 +24,22 @@ namespace LostAndFoundPlatform.Controllers
         }
 
         // GET: Item
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(bool mineOnly = false)
         {
-            var applicationDbContext = _context.Items.Include(i => i.Category);
-            return View(await applicationDbContext.ToListAsync());
+            var currentUserId = _userManager.GetUserId(User);
+
+            var items = _context.Items
+                .Include(i => i.Category)
+                .AsQueryable();
+
+            if (mineOnly)
+            {
+                items = items.Where(i => i.ApplicationUserId == currentUserId);
+            }
+
+            ViewBag.MineOnly = mineOnly;
+
+            return View(await items.ToListAsync());
         }
 
         // GET: Item/Details/5

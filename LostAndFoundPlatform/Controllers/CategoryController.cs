@@ -147,12 +147,25 @@ namespace LostAndFoundPlatform.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var category = await _context.Categories.FindAsync(id);
-            if (category != null)
+
+            if (category == null)
             {
-                _context.Categories.Remove(category);
+                return NotFound();
             }
 
+            var isUsed = await _context.Items
+                .AnyAsync(i => i.CategoryId == id);
+
+            if (isUsed)
+            {
+                TempData["ErrorMessage"] = "This category cannot be deleted because it is used by one or more items.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
 
